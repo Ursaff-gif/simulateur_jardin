@@ -1,0 +1,180 @@
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Simulateur 3D Jardin - Pavoine Paysage</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #dfebd7;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin: 0;
+    }
+    h1 {
+      margin-top: 20px;
+      color: #3f2c32;
+    }
+    #uploadSection {
+      margin: 10px;
+      text-align: center;
+    }
+    #workspace {
+      position: relative;
+      width: 90vw;
+      height: 70vh;
+      background-color: #fff;
+      background-size: cover;
+      background-position: center;
+      border: 2px solid #ccc;
+      overflow: hidden;
+      margin-bottom: 20px;
+    }
+    .plant {
+      position: absolute;
+      cursor: move;
+      width: 100px;
+      user-select: none;
+    }
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+    .controls img {
+      width: 60px;
+      height: 60px;
+      object-fit: contain;
+      cursor: pointer;
+      background: #fff;
+      border-radius: 8px;
+      border: 1px solid #ddd;
+      padding: 5px;
+    }
+    .btn-group {
+      margin-bottom: 20px;
+    }
+    .btn-group button {
+      margin: 5px;
+      padding: 8px 12px;
+      background: #95de8f;
+      border: none;
+      color: #3f2c32;
+      font-weight: bold;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    input[type="file"] {
+      padding: 5px;
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Simulateur 3D - Mon Jardin</h1>
+
+  <div id="uploadSection">
+    <input type="file" id="backgroundUpload" accept="image/*">
+    <p>Importer une image de fond (photo de votre jardin)</p>
+  </div>
+
+  <div id="workspace"></div>
+
+  <div class="controls" id="gallery"></div>
+
+  <div class="btn-group">
+    <button onclick="rotateSelected(-15)">↺ Tourner gauche</button>
+    <button onclick="rotateSelected(15)">↻ Tourner droite</button>
+    <button onclick="resizeSelected(-10)">➖ Réduire</button>
+    <button onclick="resizeSelected(10)">➕ Agrandir</button>
+  </div>
+
+  <script>
+    const gallery = document.getElementById("gallery");
+    const workspace = document.getElementById("workspace");
+    const backgroundUpload = document.getElementById("backgroundUpload");
+
+    const plantImages = [
+      "images/plante1.png", "images/plante2.png", "images/plante3.png", "images/plante4.png",
+      "images/plante5.png", "images/plante6.png", "images/plante7.png", "images/plante8.png",
+      "images/plante9.png", "images/plante10.png", "images/plante11.png", "images/plante12.png",
+      "images/plante13.png", "images/plante14.png", "images/plante15.png", "images/plante16.png",
+      "images/plante17.png"
+    ];
+
+    let selected = null;
+
+    plantImages.forEach((src) => {
+      const img = document.createElement("img");
+      img.src = src;
+      img.onclick = () => addPlant(src);
+      gallery.appendChild(img);
+    });
+
+    function addPlant(src) {
+      const img = document.createElement("img");
+      img.src = src;
+      img.classList.add("plant");
+      img.style.top = "50px";
+      img.style.left = "50px";
+      img.style.transform = "rotate(0deg) scale(1)";
+      img.onclick = () => { selected = img; };
+
+      img.onmousedown = (e) => {
+        let shiftX = e.clientX - img.getBoundingClientRect().left;
+        let shiftY = e.clientY - img.getBoundingClientRect().top;
+
+        function moveAt(pageX, pageY) {
+          img.style.left = pageX - shiftX - workspace.offsetLeft + "px";
+          img.style.top = pageY - shiftY - workspace.offsetTop + "px";
+        }
+
+        function onMouseMove(e) { moveAt(e.pageX, e.pageY); }
+
+        document.addEventListener("mousemove", onMouseMove);
+        img.onmouseup = () => {
+          document.removeEventListener("mousemove", onMouseMove);
+          img.onmouseup = null;
+        };
+      };
+      img.ondragstart = () => false;
+
+      workspace.appendChild(img);
+      selected = img;
+    }
+
+    function rotateSelected(deg) {
+      if (!selected) return;
+      const transform = selected.style.transform;
+      const match = transform.match(/rotate\(([-\d]+)deg\)/);
+      let current = match ? parseInt(match[1]) : 0;
+      const newDeg = current + deg;
+      selected.style.transform = transform.replace(/rotate\([^)]+\)/, `rotate(${newDeg}deg)`);
+    }
+
+    function resizeSelected(change) {
+      if (!selected) return;
+      const transform = selected.style.transform;
+      const match = transform.match(/scale\(([^)]+)\)/);
+      let current = match ? parseFloat(match[1]) : 1;
+      const newScale = Math.max(0.2, current + change / 100);
+      selected.style.transform = transform.replace(/scale\([^)]+\)/, `scale(${newScale})`);
+    }
+
+    backgroundUpload.addEventListener("change", (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          workspace.style.backgroundImage = `url('${event.target.result}')`;
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+  </script>
+</body>
+</html>
